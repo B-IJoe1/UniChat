@@ -7,13 +7,16 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from langchain.llms import HuggingFacePipeline
 from Topic_Router import classify_topic_and_get_response
 from Data_pipeline.index import DB_FAISS_PATH
-from sentence_transformers import SentenceTransformer
+from langchain_community.embeddings import HuggingFaceEmbeddings
+
 
 # LLM loader
 def load_llm():
     model_name = "Jsevere/llama2-7b-admissions-qa-merged"
     tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(model_name, device_map="auto")
+    model = AutoModelForCausalLM.from_pretrained(model_name, device_map=None, torch_dtype="float32")
+    print("Model loaded successfully!")
+
     pipe = pipeline(
         "text-generation",
         model=model,
@@ -22,6 +25,7 @@ def load_llm():
         temperature=0.5,
         top_p=0.1,
         top_k=3,
+        device=0
     )
     return HuggingFacePipeline(pipeline=pipe)
 
@@ -40,14 +44,14 @@ Answer:"""
 
 # Main QA bot setup
 def qa_bot():
-    embeddings = SentenceTransformer(embedding_model="all-MiniLM-L6-v2", model_kwargs={'device': 'cpu'})
+    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     faiss_store = FAISS.load_local(DB_FAISS_PATH, embeddings, allow_dangerous_deserialization=True)
     retriever = faiss_store.as_retriever(search_type="similarity", k=3)
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
     llm = load_llm()
     prompt = custom_prompt()
 
-    return retriever, embeddings, memory, llm, prompt
+    return retriever, memory, llm, prompt
     # Return a callable function for Chainlit to use
 def custom_chain(user_input, retriever, memory, llm, prompt):
         docs = retriever.get_relevant_documents(user_input)

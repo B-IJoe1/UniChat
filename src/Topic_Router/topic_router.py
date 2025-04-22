@@ -1,7 +1,10 @@
+from sentence_transformers import SentenceTransformer
 from bertopic import BERTopic
-from Llm_pipeline.pipeline import embeddings
 # Load BERTopic model once
-topic_model = BERTopic.load("Jsevere/bertopic-admissions-mmr-keybert", embedding_model = embeddings)  # or HF path
+
+embedding_model = SentenceTransformer("all-MiniLM-L6-v2")  # or HF path
+
+topic_model = BERTopic.load("Jsevere/bertopic-admissions-mmr-keybert", embedding_model = embedding_model)  # or HF path
 
 # Prewritten response map
 topic_to_response = {

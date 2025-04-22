@@ -14,39 +14,45 @@ try:
 except Exception as e:
     logger.error(f"Error loading config.toml: {e}")
 
- #chainlit code
+
 @cl.on_chat_start
 async def start():
     try:
+        logger.info("Initializing the QA bot...")
+        # Initialize components from qa_bot
         retriever, memory, llm, prompt = qa_bot()
-        
+
+        # Define the chain function for processing messages
         async def run_custom_chain(user_input):
             return custom_chain(user_input, retriever, memory, llm, prompt)
-        #logger.info("Starting the chat...")
-        cl.user_session.set("chain", run_custom_chain)
 
+        # Set it in the session BEFORE anything else can throw
+        cl.user_session.set("chain", run_custom_chain)
+        logger.info("Chain successfully set in the user session.")
+
+        # Send welcome message
         msg = cl.Message(content="Starting your gen AI bot!...")
         await msg.send()
-        msg.content = "Welcome to Uni Chat!. Ask your question here:"
+        msg.content = "Welcome to Uni Chat! Ask your question here:"
         await msg.update()
-        logger.info("QA bot initialized succefully.")
+
+        logger.info("QA bot initialized successfully.")
     except Exception as e:
         logger.error(f"Error initializing the QA bot: {e}")
-        msg = cl.Message(content=f"Error initializing the bot{e}. Please try again.")
+        msg = cl.Message(content=f"Error initializing the bot: {e}. Please try again.")
         await msg.send()
         
+        
 
-
-
-    # Set the chain in the user session
-    # This allows us to access the chain in the on_message function
-    # so we can call it with the user's message and get the answer.
-    cl.user_session.set("chain", run_custom_chain)
 @cl.on_message
 async def main(message):
     try:
         logger.info(f"Received message: {message.content}")
         chain = cl.user_session.get("chain")
+
+        if not chain:
+            raise ValueError("Chain not initialized. Please start the bot first.")
+        
         cb = cl.AsyncLangchainCallbackHandler(
             stream_final_answer=True, answer_prefix_tokens=["FINAL", "ANSWER"]
         )
