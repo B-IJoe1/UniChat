@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "CampusQuest"
+version = "0.1.0"
+description = "A project for admissions QA bot"
+authors = [{name = "Joseph Severe"}]
+dependencies = [
+    "langchain",
+    "faiss-cpu",
+    "sentence-transformers",
+    "chainlit",
+    "toml",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
