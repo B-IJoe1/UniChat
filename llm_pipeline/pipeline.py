@@ -1,10 +1,9 @@
-from langchain.document_loaders import PyPDFLoader, DirectoryLoader
 from langchain import PromptTemplate
-from langchain.embeddings import OpenAIEmbeddings
+from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.vectorstores import FAISS
 from langchain.chains import RetrievalQA
 from langchain.llms import sentence_transformers
-from Chatbot_flow.index import DB_FAISS_PATH
+from Data_pipeline.index import DB_FAISS_PATH
 
 embedding_model = sentence_transformers("Jsevere/bertopic-admissions-mmr-keybert") 
 
@@ -48,7 +47,7 @@ def retrieval_qa_chain(llm, prompt, db):
 
 #QA Model Function IMPORTANT to run QA bot
 def qa_bot():
-    embeddings = OpenAIEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2",
+    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2",
                                        model_kwargs={'device': 'cpu'})
     db = FAISS.load_local(DB_FAISS_PATH, embeddings) #Located in index.py
     llm = load_llm()
