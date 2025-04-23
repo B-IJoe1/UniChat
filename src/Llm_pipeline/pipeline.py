@@ -1,4 +1,4 @@
-from langchain_core.prompts import PromptTemplate
+from langchain.prompts import PromptTemplate
 from langchain.chains import ConversationalRetrievalChain
 from langchain_community.vectorstores import FAISS
 from langchain.memory import ConversationBufferMemory
@@ -8,17 +8,24 @@ from langchain.llms import HuggingFacePipeline
 from Topic_Router import classify_topic_and_get_response
 from Data_pipeline.index import DB_FAISS_PATH
 from langchain_community.embeddings import HuggingFaceEmbeddings
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
 # LLM loader
 def load_llm():
-    model_name = "Jsevere/llama2-7b-admissions-qa-merged"
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(model_name, device_map=None, torch_dtype="float32")
+    model = AutoModelForCausalLM.from_pretrained(
+        "Jsevere/llama2-7b-admissions-qa-merged",
+        torch_dtype=torch.bfloat16,
+        device_map="auto"
+    )
+    tokenizer = AutoTokenizer.from_pretrained(model)
+    model = AutoModelForCausalLM.from_pretrained(model, device_map=None, torch_dtype="float32")
+
     print("Model loaded successfully!")
 
     pipe = pipeline(
-        "text-generation",
+        task="text-generation",
         model=model,
         tokenizer=tokenizer,
         max_new_tokens=512,
@@ -52,21 +59,25 @@ def qa_bot():
     prompt = custom_prompt()
 
     return retriever, memory, llm, prompt
-    # Return a callable function for Chainlit to use
-def custom_chain(user_input, retriever, memory, llm, prompt):
-        docs = retriever.get_relevant_documents(user_input)
-        if docs:
-            context = "\n".join([doc.page_content for doc in docs])
-        else:
-            context = classify_topic_and_get_response(user_input)
 
-        chain = ConversationalRetrievalChain.from_llm(
-            llm=llm,
-            retriever=retriever,
-            memory=memory,
-            prompt=prompt,
-            return_source_documents=True,
-        )
-        chain.invoke({"question": user_input, "context": context})
-        
-        return custom_chain  # 🟢 now returns a function ready to run
+# Return a callable function for Chainlit to use
+async def custom_chain(user_input, retriever, memory, llm, prompt, callbacks=None):
+    docs = retriever.get_relevant_documents(user_input)
+    if docs:
+        context = "\n".join([doc.page_content for doc in docs])
+    else:
+        context = classify_topic_and_get_response(user_input)
+
+    cr_chain = ConversationalRetrievalChain.from_llm(
+        llm=llm,
+        retriever=retriever,
+        memory=memory,
+        prompt=prompt,
+        return_source_documents=True,
+    )
+    return await cr_chain.acall(
+        {"question": user_input, "context": context},
+        callbacks=callbacks)
+    
+
+
