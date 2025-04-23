@@ -1,77 +1,73 @@
-from Llm_pipeline.pipeline import qa_bot, custom_chain
 import chainlit as cl
-import logging
-import toml
+from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+from langchain.chains import ConversationalRetrievalChain
+from langchain_community.prompts import PromptTemplate
+from langchain_community.vectorstores import FAISS
+from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.memory import ConversationBufferMemory
+from langchain_hub import HuggingFacePipeline
 
-#Configure logging to track errors and debug issues
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-
-config_path = "/Users/josephsevere/Downloads/CampusQuest/.chainlit/config.toml"
-try:
-    config = toml.load(config_path)
-    logger.debug(f"Loaded config: {config}")
-except Exception as e:
-    logger.error(f"Error loading config.toml: {e}")
-
+# (your existing pipeline functions here)
+# — load_llm()
+# — custom_prompt()
+# — qa_bot()
+# — custom_chain()
 
 @cl.on_chat_start
 async def start():
-    try:
-        logger.info("Initializing the QA bot...")
-        # Initialize components from qa_bot
-        retriever, memory, llm, prompt = qa_bot()
+    # 1) build your QA components once
+    retriever, memory, llm, prompt = qa_bot()
 
-        # Define the chain function for processing messages
-        async def run_custom_chain(user_input):
-            return custom_chain(user_input, retriever, memory, llm, prompt)
+    # 2) define an async wrapper that Chainlit will call per‐message
+    async def run_chain(user_input, callbacks=None):
+        # call your custom_chain, but await its .acall to get streaming support
+        # note: custom_chain builds a CRChain; we call .acall on it
+        cr_chain = ConversationalRetrievalChain.from_llm(
+            llm=llm,
+            retriever=retriever,
+            memory=memory,
+            prompt=prompt,
+            return_source_documents=True,
+        )
+        return await cr_chain.acall(
+            {"question": user_input, "context": ""},  # context is injected inside custom_chain
+            callbacks=callbacks
+        )
 
-        # Set it in the session BEFORE anything else can throw
-        cl.user_session.set("chain", run_custom_chain)
-        logger.info("Chain successfully set in the user session.")
+    # 3) stash it in the user session
+    cl.user_session.set("chain", run_chain)
 
-        # Send welcome message
-        msg = cl.Message(content="Starting your gen AI bot!...")
-        await msg.send()
-        msg.content = "Welcome to Uni Chat! Ask your question here:"
-        await msg.update()
+    # 4) send your welcome
+    msg = cl.Message(content="Starting your gen AI bot!...")
+    await msg.send()
+    msg.content = "Welcome to Demo Bot! Ask your question here:"
+    await msg.update()
 
-        logger.info("QA bot initialized successfully.")
-    except Exception as e:
-        logger.error(f"Error initializing the QA bot: {e}")
-        msg = cl.Message(content=f"Error initializing the bot: {e}. Please try again.")
-        await msg.send()
-        
-        
 
 @cl.on_message
 async def main(message):
-    try:
-        logger.info(f"Received message: {message.content}")
-        chain = cl.user_session.get("chain")
+    # 1) pull back the wrapper
+    chain = cl.user_session.get("chain")
+    if not chain:
+        await cl.Message(content="Bot not initialized.").send()
+        return
 
-        if not chain:
-            raise ValueError("Chain not initialized. Please start the bot first.")
-        
-        cb = cl.AsyncLangchainCallbackHandler(
-            stream_final_answer=True, answer_prefix_tokens=["FINAL", "ANSWER"]
-        )
-        cb.answer_reached = True
+    # 2) prepare a LangChain callback for streaming & prefix
+    cb = cl.AsyncLangchainCallbackHandler(
+        stream_final_answer=True,
+        answer_prefix_tokens=["FINAL", "ANSWER"]
+    )
+    cb.answer_reached = True
 
-        res = await chain.acall(message.content, callbacks=[cb])
-        answer = res["result"]
-        sources = res.get("documents", [])
+    # 3) run the chain, passing the callback
+    res = await chain(message.content, callbacks=[cb])
 
-        if sources:
-            answer += "\nSources:\n" + "\n".join([str(source) for source in sources])
-        else:
-            answer+= "\nNo sources found or topics. Please contact the Admissions Office for personalized assistance."
-            #fallback = classify_topic_and_get_response(message.content)
-            #answer = fallback
+    # 4) format & send
+    text = res["result"]
+    docs = res.get("source_documents", []) or res.get("documents", [])
+    if docs:
+        text += "\n\nSources:\n" + "\n".join(d.page_content for d in docs)
+    else:
+        text += "\n\nNo sources found."
 
-        await cl.Message(content=answer).send()
-        logger.info("Response sent to the user.")
-    except Exception as e:
-        # Handle any errors that occur during processing
-        logger.error(f"Error processing the message: {e}")
-        await cl.Message(content=f"Error processing your message: {e}").send()
+    await cl.Message(content=text).send()
