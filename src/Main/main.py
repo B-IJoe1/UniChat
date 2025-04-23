@@ -1,12 +1,6 @@
 import chainlit as cl
 from Llm_pipeline.pipeline import qa_bot
 
-# (your existing pipeline functions here)
-# — load_llm()
-# — custom_prompt()
-# — qa_bot()
-# — custom_chain()
-
 @cl.on_chat_start
 async def start():
     chain = qa_bot()
@@ -19,7 +13,7 @@ async def start():
 async def main(message):
     chain = cl.user_session.get("chain")
     cb = cl.AsyncLangchainCallbackHandler(stream_final_answer=True)
-    res = await chain(message.content, callbacks=[cb])
+    res = await chain.invoke(message.content, callbacks=[cb])
     answer = res["result"]
     sources = res.get("source_documents", [])
     if sources:
