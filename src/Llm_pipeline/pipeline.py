@@ -1,18 +1,19 @@
 from langchain_core.prompts import PromptTemplate
-from langchain.chains import ConversationalRetrievalChain
-from langchain_community.vectorstores import FAISS
 import os
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
+from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from Topic_Router import classify_topic_and_get_response
 from Data_pipeline.index import DB_FAISS_PATH
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from langchain.chains import RetrievalQA
+from langchain.chains import create_retrieval_chain
 from langchain.memory import ConversationBufferMemory
-from langchain_community.llms import HuggingFacePipeline
-from langchain.chains.question_answering import load_qa_chain
+from langchain_huggingface import HuggingFacePipeline
+from langchain_core.prompts.base import BasePromptTemplate
+from langchain_core.runnables.base import Runnable
+from langchain.chains.combine_documents import create_stuff_documents_chain
+
 
 # LLM loader
 def load_llm():
@@ -42,26 +43,40 @@ def load_llm():
 def custom_prompt():
     template = """You are a helpful chat assistant for Salem State University admissions.
         Context: {context}
-        Question: {question}
+        Question: {input}
         """
-    prompt = PromptTemplate(template=template, input_variables=["context", "question"])
-    return prompt
+    return PromptTemplate(template=template, input_variables=["context", "input"])
+    
 
+
+#os.environ["TOKENIZERS_PARALLELISM"] = "false" #disabling parallelism to avoid warnings
 # Main QA bot setup
-def create_qa_chain(load_llm,custom_prompt):
+def create_qa_chain(load_llm, custom_prompt):
    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
    db = FAISS.load_local(DB_FAISS_PATH, embeddings=embeddings, allow_dangerous_deserialization=True)
+   retriever = db.as_retriever(search_kwargs={"k": 3})
+   llm = load_llm()
+   prompt = custom_prompt()
+   
+    #Validate types
+   if not isinstance(llm, Runnable):
+    raise TypeError(f"Expected 'llm' to be a Runnable, got {type(llm)}")
+   if not isinstance(prompt, BasePromptTemplate):
+      raise TypeError(f"Expected 'prompt' to be a BasePromptTemplate, got {type(prompt)}")
    
    
-   qa_chain = RetrievalQA.from_chain_type(
-       llm=load_llm,
-       chain_type="stuff",
-       retriever = db.as_retriever(search_type="similarity", k=3),
-       #memory=ConversationBufferMemory(memory_key="chat_history", input_key="question"),
-       return_source_documents=True,
-       chain_type_kwargs={"prompt": custom_prompt}   
-      
-   )
+
+   #memory = ConversationBufferMemory(return_messages=True,
+                                    #memory_key="chat_history", 
+                                    #input_key="input", 
+                                    #output_key="answer")
+   
+
+   question_answer_chain = create_stuff_documents_chain(llm,prompt)
+   qa_chain = create_retrieval_chain(retriever,
+                                      question_answer_chain,
+                                      )
+                                     
    return qa_chain
 
 print("QA bot initialized successfully with sentence transformer!")
@@ -70,19 +85,11 @@ print("QA bot initialized successfully with sentence transformer!")
 async def qa_bot_answer(user_input, qa_chain, retriever):
     docs = retriever.get_relevant_documents(user_input)
 
-    qa_bot_instance = qa_chain()
-    bot_response = qa_bot_instance({"context": context, "question": user_input})
     
     if docs:
         context = "\n".join([doc.page_content for doc in docs])
     else:
         context = classify_topic_and_get_response(user_input)
-        
-        return bot_response
-
-
-
-    #return await chain.acall(
-        #{"context": context, "question": user_input},
-       # callbacks=callbacks
-   # )
+    
+    bot_response = qa_chain.acall({"context": context, "input": user_input})
+    return bot_response
