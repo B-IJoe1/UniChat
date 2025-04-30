@@ -35,7 +35,7 @@ def load_llm():
         max_new_tokens=512,
         temperature=0.5,
         top_p=0.1,
-        top_k=3,
+        top_k=1,
     )
     return HuggingFacePipeline(pipeline=pipe)
 

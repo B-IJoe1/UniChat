@@ -7,31 +7,34 @@ import pandas as pd
 #DATA_PATH = 'demodataPDFs/'
 DB_FAISS_PATH = 'vectorstore/db_faiss'
 
+#Load the dataset
 df = pd.read_csv("/Users/josephsevere/Downloads/Combined Admissions Data.csv")
-
-
 docs = df['Content'].tolist()
+section_headers = df['Section Header'].tolist() #Loading the section headers
 
-  
+#Loading the BERTopic model 
 topic_model = BERTopic.load("Jsevere/bertopic-admissions-mmr-keybert")
 
 
-
+#Getting topic information 
 topic_info_df = topic_model.get_topic_info()
 doc_info = topic_model.get_document_info(docs)
 topic_ids = topic_info_df["Topic"].tolist()
 
-
-
+#Initializing the text splitter
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
 
 topic_content_dict = {}
 # Example: Assigning topic_id
 for i, tid in enumerate(topic_model.topics_):
-    content = doc_info.iloc[i]["Document"]  # Access content from doc_info
+    content = doc_info.iloc[i]["Document"]
+    header = section_headers[i]
+    combined_content = f"{header}\n{content}"
+    
+      # Access content from doc_info
     if tid not in topic_content_dict: # Check if the topic_id has not already been created in the dictionary before passing it into the dictionary
         topic_content_dict[tid] = []
-        topic_content_dict[tid].append(content)
+        topic_content_dict[tid].append(combined_content)
     
 #Print the dictionary 
 print(f"Document {i} belongs to Topic {topic_content_dict}")
