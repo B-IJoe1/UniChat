@@ -5,7 +5,7 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from Topic_Router import classify_topic_and_get_response
 from Data_pipeline.index import DB_FAISS_PATH
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from langchain.chains import create_retrieval_chain
 from langchain.memory import ConversationBufferMemory

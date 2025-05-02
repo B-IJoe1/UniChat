@@ -22,7 +22,7 @@ doc_info = topic_model.get_document_info(docs)
 topic_ids = topic_info_df["Topic"].tolist()
 
 #Initializing the text splitter
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=250, chunk_overlap=50)
 
 topic_content_dict = {}
 # Example: Assigning topic_id

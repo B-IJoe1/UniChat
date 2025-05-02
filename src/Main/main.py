@@ -8,11 +8,9 @@ async def start():
     qa_chain = create_qa_chain(load_llm=load_llm, custom_prompt=custom_prompt)
     print("LLM Loader:", load_llm)
     print("Prompt Template:", custom_prompt)
-    welcome_message = cl.Message(content = "Starting the bot....")
+    welcome_message = cl.Message(content = "Welcome! Ask me anything:")
     await welcome_message.send()
 
-    msg = cl.Message(content="Welcome! Ask me anything:")
-    await msg.update()
 
     cl.user_session.set("chain", qa_chain)
 
