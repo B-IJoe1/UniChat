@@ -21,7 +21,8 @@ def load_llm():
     model = AutoModelForCausalLM.from_pretrained(
         model_id,
         torch_dtype="auto",  # bfloat16 on supported hardware, fallback otherwise
-        device_map="auto"
+        device_map="auto",
+        low_cpu_mem_usage=True,
     )
     tokenizer = AutoTokenizer.from_pretrained(model_id)
    
@@ -91,5 +92,5 @@ async def qa_bot_answer(user_input, qa_chain, retriever):
     else:
         context = classify_topic_and_get_response(user_input)
     
-    bot_response = qa_chain.acall({"context": context, "input": user_input})
+    bot_response = await qa_chain.acall({"context": context, "input": user_input})
     return bot_response
