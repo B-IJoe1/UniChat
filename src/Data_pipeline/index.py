@@ -3,12 +3,13 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 import pandas as pd
-
+import os
 #DATA_PATH = 'demodataPDFs/'
 DB_FAISS_PATH = 'vectorstore/db_faiss'
 
-#Load the dataset
-df = pd.read_csv("Combined Admissions Data.csv") #Add /Users/josephsevere/Downloads/ in front if not running on AWS EC2 instance
+#Works well locally and with EC2 instance 
+csv_path = os.path.join(os.path.dirname(__file__), "../../Combined Admissions Data.csv")
+df = pd.read_csv(csv_path)
 
 docs = df['Content'].tolist()
 section_headers = df['Section Header'].tolist() #Loading the section headers
