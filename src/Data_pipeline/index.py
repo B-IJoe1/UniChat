@@ -10,7 +10,7 @@ DB_FAISS_PATH = 'vectorstore/db_faiss'
 #csv_path = os.path.join(os.path.dirname(__file__), "../../Combined Admissions Data.csv")
 #df = pd.read_csv(csv_path)
 #Load the dataset
-df = pd.read_csv("Combined Admissions Data.csv") #Add /Users/josephsevere/Downloads/ in front if not running on AWS EC2 instance
+df = pd.read_csv("UniChat/Combined Admissions Data.csv") #Add /Users/josephsevere/Downloads/ in front if not running on AWS EC2 instance
 
 docs = df['Content'].tolist()
 section_headers = df['Section Header'].tolist() #Loading the section headers
