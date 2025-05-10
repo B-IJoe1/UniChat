@@ -8,7 +8,8 @@ import pandas as pd
 DB_FAISS_PATH = 'vectorstore/db_faiss'
 
 #Load the dataset
-df = pd.read_csv("/Users/josephsevere/Downloads/Combined Admissions Data.csv")
+df = pd.read_csv("Combined Admissions Data.csv") #Add /Users/josephsevere/Downloads/ in front if not running on AWS EC2 instance
+
 docs = df['Content'].tolist()
 section_headers = df['Section Header'].tolist() #Loading the section headers
 
