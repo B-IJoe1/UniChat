@@ -10,3 +10,5 @@ numpy==2.2.4
 pandas==2.2.3
 transformers==4.51.3 # Update to the latest version if needed
 sentence-transformers==4.1.0 # Update to the latest version if needed
+
+#Just do 
