@@ -1,49 +1,39 @@
 from bertopic import BERTopic
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import FAISS
+from langchain.vectorstores.faiss import FAISS as LCFAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 import pandas as pd
+import numpy as np
+import faiss
 import os
-#DATA_PATH = 'demodataPDFs/'
+
 DB_FAISS_PATH = 'vectorstore/db_faiss'
 
-#csv_path = os.path.join(os.path.dirname(__file__), "../../Combined Admissions Data.csv")
-#df = pd.read_csv(csv_path)
-#Load the dataset
-df = pd.read_csv('Combined Admissions Data.csv') #Add /Users/josephsevere/Downloads/ in front if not running on AWS EC2 instance
-
+# Load dataset
+df = pd.read_csv('Combined Admissions Data.csv')
 docs = df['Content'].tolist()
-section_headers = df['Section Header'].tolist() #Loading the section headers
+section_headers = df['Section Header'].tolist()
 
-#Loading the BERTopic model 
+# Load BERTopic model
 topic_model = BERTopic.load("Jsevere/bertopic-admissions-mmr-keybert")
-
-
-#Getting topic information 
 topic_info_df = topic_model.get_topic_info()
 doc_info = topic_model.get_document_info(docs)
 topic_ids = topic_info_df["Topic"].tolist()
 
-#Initializing the text splitter
+# Initialize text splitter
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=250, chunk_overlap=50)
 
+# Group content by topic
 topic_content_dict = {}
-# Example: Assigning topic_id
 for i, tid in enumerate(topic_model.topics_):
     content = doc_info.iloc[i]["Document"]
     header = section_headers[i]
     combined_content = f"{header}\n{content}"
-    
-      # Access content from doc_info
-    if tid not in topic_content_dict: # Check if the topic_id has not already been created in the dictionary before passing it into the dictionary
-        topic_content_dict[tid] = []
-        topic_content_dict[tid].append(combined_content)
-    
-#Print the dictionary 
+    topic_content_dict.setdefault(tid, []).append(combined_content)
+
 print(f"Document {i} belongs to Topic {topic_content_dict}")
 
-
-#  Split documents into chunks by topic
+# Split documents by topic into chunks
 all_chunks = {}
 for tid, docs in topic_content_dict.items():
     all_chunks[tid] = []
@@ -51,22 +41,43 @@ for tid, docs in topic_content_dict.items():
         chunks = text_splitter.split_text(doc)
         all_chunks[tid].extend(chunks)
 
-
-# 4. Prepare embeddings and vectorstore for each topic group
+# Prepare embeddings
 embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-
-# Combine all chunks into a single list for embedding
 combined_chunks = [chunk for chunks in all_chunks.values() for chunk in chunks]
+vectors = embeddings.embed_documents(combined_chunks)
+vector_array = np.array(vectors).astype("float32")
 
-# Create a FAISS vector store using the embeddings
-faiss_store = FAISS.from_texts(combined_chunks, embeddings)
+# GPU FAISS setup
+res = faiss.StandardGpuResources()
+d = vector_array.shape[1]
+nlist = 100
+quantizer = faiss.IndexFlatL2(d)
+cpu_index = faiss.IndexIVFFlat(quantizer, d, nlist)
+gpu_index = faiss.index_cpu_to_gpu(res, 0, cpu_index)
 
-    
-# Save the FAISS index for later use
+gpu_index.train(vector_array)
+gpu_index.add(vector_array)
+
+# Wrap with LangChain FAISS store
+docstore = LCFAISS._docstore_from_texts(combined_chunks)
+faiss_store = LCFAISS(
+    embedding_function=embeddings,
+    index=gpu_index,
+    docstore=docstore,
+    index_to_docstore_id={i: str(i) for i in range(len(combined_chunks))}
+)
+
+# Save index (convert GPU to CPU index)
+faiss.write_index(faiss.index_gpu_to_cpu(gpu_index), f"{DB_FAISS_PATH}/index.faiss")
 faiss_store.save_local(DB_FAISS_PATH)
 
-# Load the FAISS index (later for faster retrieval w/o recomputing)
-faiss_store = FAISS.load_local(DB_FAISS_PATH, embeddings, allow_dangerous_deserialization=True)
+# Reload for confirmation
+cpu_index = faiss.read_index(f"{DB_FAISS_PATH}/index.faiss")
+faiss_store = LCFAISS(
+    embedding_function=embeddings,
+    index=cpu_index,
+    docstore=docstore,
+    index_to_docstore_id={i: str(i) for i in range(len(combined_chunks))}
+)
 
-# Check if the FAISS index is loaded successfully
 print("FAISS index loaded successfully.")
