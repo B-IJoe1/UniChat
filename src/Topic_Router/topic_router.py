@@ -5,7 +5,7 @@ from bertopic import BERTopic
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")  # or HF path
 
 topic_model = BERTopic.load("Jsevere/bertopic-admissions-mmr-keybert", embedding_model = embedding_model)  # or HF path
-
+print("BERTopic model initialized successfully.")
 # Prewritten response map
 topic_to_response = {
     0: "For scholarship questions, please visit the Financial Aid Office or check the scholarship portal.",

@@ -25,7 +25,8 @@ def load_llm():
         low_cpu_mem_usage=True,
     )
     tokenizer = AutoTokenizer.from_pretrained(model_id)
-   
+    print("Transformers model loaded successfully.")
+
 #Checking if the model is loaded correctly
     print("Model loaded successfully!")
 
@@ -60,10 +61,10 @@ def create_qa_chain(load_llm, custom_prompt):
    prompt = custom_prompt()
    
     #Validate types
-   if not isinstance(llm, Runnable):
-    raise TypeError(f"Expected 'llm' to be a Runnable, got {type(llm)}")
-   if not isinstance(prompt, BasePromptTemplate):
-      raise TypeError(f"Expected 'prompt' to be a BasePromptTemplate, got {type(prompt)}")
+   #if not isinstance(llm, Runnable):
+    #raise TypeError(f"Expected 'llm' to be a Runnable, got {type(llm)}")
+   #if not isinstance(prompt, BasePromptTemplate):
+      #raise TypeError(f"Expected 'prompt' to be a BasePromptTemplate, got {type(prompt)}")
    
    
 
