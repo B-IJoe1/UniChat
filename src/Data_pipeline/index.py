@@ -68,15 +68,25 @@ faiss_store = LCFAISS.from_texts(
 
 # Save index (convert GPU to CPU index)
 faiss.write_index(faiss.index_gpu_to_cpu(gpu_index), f"{DB_FAISS_PATH}/index.faiss")
-faiss_store.save_local(DB_FAISS_PATH)
+print("FAISS index saved to disk in CPU format.")
+
+
+# Optional: Transfer the index to GPU when needed
+cpu_index = faiss.read_index(f"{DB_FAISS_PATH}/index.faiss")
+res = faiss.StandardGpuResources()
+gpu_index = faiss.index_cpu_to_gpu(res, 0, cpu_index)
+print("FAISS index transferred to GPU.")
+
+
+#faiss_store.save_local(DB_FAISS_PATH)
+#print("FAISS index loaded successfully.")
 
 # Reload for confirmation
-cpu_index = faiss.read_index(f"{DB_FAISS_PATH}/index.faiss")
-faiss_store = LCFAISS(
-    embedding_function=embeddings,
-    index=cpu_index,
-    docstore=faiss_store.docstore,
-    index_to_docstore_id={i: str(i) for i in range(len(combined_chunks))}
-)
+#cpu_index = faiss.read_index(f"{DB_FAISS_PATH}/index.faiss")
+#faiss_store = LCFAISS(
+    #embedding_function=embeddings,
+    #index=cpu_index,
+    #docstore=faiss_store.docstore,
+    #index_to_docstore_id={i: str(i) for i in range(len(combined_chunks))}
+#)
 
-print("FAISS index loaded successfully.")
