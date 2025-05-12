@@ -32,8 +32,6 @@ for i, tid in enumerate(topic_model.topics_):
     combined_content = f"{header}\n{content}"
     topic_content_dict.setdefault(tid, []).append(combined_content)
 
-print(f"Document {i} belongs to Topic {topic_content_dict}")
-
 # Split documents by topic into chunks
 all_chunks = {}
 for tid, docs in topic_content_dict.items():
@@ -41,7 +39,7 @@ for tid, docs in topic_content_dict.items():
     for doc in docs:
         chunks = text_splitter.split_text(doc)
         all_chunks[tid].extend(chunks)
-
+        
 # Prepare embeddings
 embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 combined_chunks = [chunk for chunks in all_chunks.values() for chunk in chunks]
@@ -49,15 +47,18 @@ vectors = embeddings.embed_documents(combined_chunks)
 vector_array = np.array(vectors).astype("float32")
 
 # GPU FAISS setup
-res = faiss.StandardGpuResources()
-d = vector_array.shape[1]
-nlist = 100
-quantizer = faiss.IndexFlatL2(d)
-cpu_index = faiss.IndexIVFFlat(quantizer, d, nlist)
-gpu_index = faiss.index_cpu_to_gpu(res, 0, cpu_index)
+try:
+    res = faiss.StandardGpuResources()
+    d = vector_array.shape[1]
+    nlist = 100
+    quantizer = faiss.IndexFlatL2(d)
+    cpu_index = faiss.IndexIVFFlat(quantizer, d, nlist)
+    gpu_index = faiss.index_cpu_to_gpu(res, 0, cpu_index)
 
-gpu_index.train(vector_array)
-gpu_index.add(vector_array)
+    gpu_index.train(vector_array)
+    gpu_index.add(vector_array)
+except Exception as e:
+    raise RuntimeError(f"Failed to initialize FAISS GPU resources: {e}")
 
 # Wrap with LangChain FAISS store
 faiss_store = LCFAISS.from_texts(
@@ -66,9 +67,12 @@ faiss_store = LCFAISS.from_texts(
     index=gpu_index,
 )
 
-# Save index (convert GPU to CPU index)
-faiss.write_index(faiss.index_gpu_to_cpu(gpu_index), f"{DB_FAISS_PATH}/index.faiss")
-print("FAISS index saved to disk in CPU format.")
+# Save index
+try:
+    faiss.write_index(faiss.index_gpu_to_cpu(gpu_index), f"{DB_FAISS_PATH}/index.faiss")
+    print("FAISS index saved to disk in CPU format.")
+except Exception as e:
+    raise RuntimeError(f"Failed to save FAISS index: {e}")
 
 
 # Optional: Transfer the index to GPU when needed
