@@ -1,6 +1,6 @@
 from bertopic import BERTopic
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores.faiss import FAISS as LCFAISS
+from langchain_community.vectorstores.faiss import FAISS as LCFAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 import pandas as pd
 import numpy as np
@@ -59,7 +59,7 @@ gpu_index.train(vector_array)
 gpu_index.add(vector_array)
 
 # Wrap with LangChain FAISS store
-docstore = LCFAISS._docstore_from_texts(combined_chunks)
+docstore = LCFAISS.from_texts(combined_chunks)
 faiss_store = LCFAISS(
     embedding_function=embeddings,
     index=gpu_index,
@@ -76,7 +76,7 @@ cpu_index = faiss.read_index(f"{DB_FAISS_PATH}/index.faiss")
 faiss_store = LCFAISS(
     embedding_function=embeddings,
     index=cpu_index,
-    docstore=docstore,
+    docstore=faiss_store.docstore,
     index_to_docstore_id={i: str(i) for i in range(len(combined_chunks))}
 )
 
