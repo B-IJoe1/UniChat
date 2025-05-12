@@ -63,8 +63,7 @@ except Exception as e:
 # Wrap with LangChain FAISS store
 faiss_store = LCFAISS.from_texts(
     texts = combined_chunks,
-    embedding=embeddings,
-    index=gpu_index,
+    embedding=embeddings
 )
 
 # Save index
