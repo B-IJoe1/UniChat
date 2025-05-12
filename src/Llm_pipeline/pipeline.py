@@ -1,6 +1,6 @@
 from langchain_core.prompts import PromptTemplate
 import os
-from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from Topic_Router import classify_topic_and_get_response
