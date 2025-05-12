@@ -1,27 +1,18 @@
 from bertopic import BERTopic
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores.faiss import FAISS as LCFAISS
+from langchain_community.vectorstores.faiss import FAISS 
 from langchain_huggingface import HuggingFaceEmbeddings
 import pandas as pd
-import numpy as np
+#import numpy as np
 import faiss
 import os
 import torch
+
 DB_FAISS_PATH = 'vectorstore/db_faiss'
-#os.makedirs(DB_FAISS_PATH, exist_ok=True)  # Ensure the directory exists
-
-# Test NumPy
-print("NumPy version:", np.__version__)
-
-# Test FAISS
-d = 128  # Dimension of vectors
-index = faiss.IndexFlatL2(d)
-print("FAISS index created successfully.")
 
 # Test PyTorch
 print("PyTorch version:", torch.__version__)
 print("CUDA available:", torch.cuda.is_available())
-
 
 # Load dataset
 df = pd.read_csv('Combined Admissions Data.csv')
@@ -37,6 +28,7 @@ topic_ids = topic_info_df["Topic"].tolist()
 # Initialize text splitter
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=250, chunk_overlap=50)
 print("LangChain text splitter initialized successfully.")
+
 # Group content by topic
 topic_content_dict = {}
 for i, tid in enumerate(topic_model.topics_):
@@ -45,35 +37,32 @@ for i, tid in enumerate(topic_model.topics_):
     combined_content = f"{header}\n{content}"
     topic_content_dict.setdefault(tid, []).append(combined_content)
 
-# Split documents by topic into chunks
+# Split documents into chunks by topic
 all_chunks = {}
 for tid, docs in topic_content_dict.items():
     all_chunks[tid] = []
     for doc in docs:
         chunks = text_splitter.split_text(doc)
         all_chunks[tid].extend(chunks)
-        
 
 # Prepare embeddings
 embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 combined_chunks = [chunk for chunks in all_chunks.values() for chunk in chunks]
-vectors = embeddings.embed_documents(combined_chunks)
-vector_array = np.array(vectors).astype("float32")
+vectors = torch.tensor(embeddings.embed_documents(combined_chunks), dtype=torch.float32)
 
 # GPU FAISS setup
 try:
-    res = faiss.StandardGpuResources()
-    d = vector_array.shape[1]
-    nlist = 100
-    quantizer = faiss.IndexFlatL2(d)
-    cpu_index = faiss.IndexIVFFlat(quantizer, d, nlist)
-    gpu_index = faiss.index_cpu_to_gpu(res, 0, cpu_index)
+    res = faiss.StandardGpuResources()  # Initialize GPU resources
+    d = vectors.shape[1]
+    nlist = 100  # Number of clusters
+    quantizer = faiss.IndexFlatL2(d)  # L2 distance quantizer
+    gpu_index = faiss.IndexIVFFlat(quantizer, d, nlist)  # IVF index
+    gpu_index = faiss.index_cpu_to_gpu(res, 0, gpu_index)  # Move index to GPU
 
-    gpu_index.train(vector_array)
-    gpu_index.add(vector_array)
+    gpu_index.train(vectors.numpy())  # FAISS requires NumPy-like input
+    gpu_index.add(vectors.numpy())
 except Exception as e:
     raise RuntimeError(f"Failed to initialize FAISS GPU resources: {e}")
-
 
 # Save index
 try:
@@ -82,23 +71,11 @@ try:
 except Exception as e:
     raise RuntimeError(f"Failed to save FAISS index: {e}")
 
-
-# Optional: Transfer the index to GPU when needed
-cpu_index = faiss.read_index(f"{DB_FAISS_PATH}/index.faiss")
-res = faiss.StandardGpuResources()
-gpu_index = faiss.index_cpu_to_gpu(res, 0, cpu_index)
-print("FAISS index transferred to GPU.")
-
-
-#faiss_store.save_local(DB_FAISS_PATH)
-#print("FAISS index loaded successfully.")
-
 # Reload for confirmation
-#cpu_index = faiss.read_index(f"{DB_FAISS_PATH}/index.faiss")
-#faiss_store = LCFAISS(
-    #embedding_function=embeddings,
-    #index=cpu_index,
-    #docstore=faiss_store.docstore,
-    #index_to_docstore_id={i: str(i) for i in range(len(combined_chunks))}
-#)
-
+try:
+    cpu_index = faiss.read_index(f"{DB_FAISS_PATH}/index.faiss")
+    res = faiss.StandardGpuResources()
+    gpu_index = faiss.index_cpu_to_gpu(res, 0, cpu_index)
+    print("FAISS index reloaded and transferred to GPU successfully.")
+except Exception as e:
+    raise RuntimeError(f"Failed to reload FAISS index: {e}")
