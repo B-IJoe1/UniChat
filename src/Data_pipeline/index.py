@@ -8,6 +8,7 @@ import faiss
 import os
 
 DB_FAISS_PATH = 'vectorstore/db_faiss'
+#os.makedirs(DB_FAISS_PATH, exist_ok=True)  # Ensure the directory exists
 
 # Load dataset
 df = pd.read_csv('Combined Admissions Data.csv')
@@ -59,12 +60,10 @@ gpu_index.train(vector_array)
 gpu_index.add(vector_array)
 
 # Wrap with LangChain FAISS store
-docstore = LCFAISS.from_texts(combined_chunks)
-faiss_store = LCFAISS(
-    embedding_function=embeddings,
+faiss_store = LCFAISS.from_texts(
+    texts = combined_chunks,
+    embedding=embeddings,
     index=gpu_index,
-    docstore=docstore,
-    index_to_docstore_id={i: str(i) for i in range(len(combined_chunks))}
 )
 
 # Save index (convert GPU to CPU index)
