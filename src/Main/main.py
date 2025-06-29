@@ -1,6 +1,6 @@
 import chainlit as cl
 from Llm_pipeline.pipeline import create_qa_chain, qa_bot_answer, load_llm, custom_prompt
-from Topic_Router.topic_router import topic_to_response
+from Topic_router.topic_router import topic_to_response
 
 @cl.on_chat_start
 async def start():
@@ -22,7 +22,7 @@ async def main(message):
     cb.answer_reached = True
 
     #waiting to call the chain which includes the LLM and the retriever
-    response = await qa_chain.ainvoke({"input": message.content}, config={"callbacks": [cb]})
+    response = await qa_chain.ainvoke({"input": message.content})
 
     bot_response = await qa_bot_answer(message.content, qa_chain, response, topic_to_response)
 
