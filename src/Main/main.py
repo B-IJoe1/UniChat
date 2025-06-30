@@ -22,7 +22,7 @@ async def main(message):
     cb.answer_reached = True
 
     #waiting to call the chain which includes the LLM and the retriever
-    response = await qa_chain.ainvoke({"input": message.content})
+    response = await qa_chain.ainvoke({"input": message.content}, config={"callbacks": [cb]})
 
     bot_response = await qa_bot_answer(message.content, qa_chain, response, topic_to_response)
 
