@@ -18,5 +18,3 @@ dependencies = [
 [tool.setuptools.packages.find]
 where = ["src"]
 
-[ui]
-cot = "hidden"

@@ -1,0 +1,13 @@
+# Core dependencies
+chainlit
+langchain-community
+langchain-huggingface
+sentence-transformers
+transformers
+bertopic
+
+
+# PyTorch with CUDA support
+torch==2.0.1
+torchvision==0.15.2
+torchaudio==2.0.2
