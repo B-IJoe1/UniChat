@@ -30,7 +30,7 @@ async def process_tool(message: cl.Message, qa_chain):
     #cb.answer_reached = True
 
     #waiting to call the chain which includes the LLM and the retriever
-    response = await qa_chain.ainvoke({"input": message.content}, config={"callbacks": [cb]})
+    response = await qa_chain.ainvoke({"input": message.content})
     return response
 
 #This will display the final answer from the bot
