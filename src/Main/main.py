@@ -15,18 +15,19 @@ async def start():
     qa_chain = create_qa_chain(load_llm=load_llm, custom_prompt=custom_prompt)
     print("LLM Loader:", load_llm)
     print("Prompt Template:", custom_prompt)
-    welcome_message = cl.Message(content = "Welcome! Ask me anything:")
-    await welcome_message.send()
+    cl.user_session.set("chain", qa_chain) 
+    await cl.Message(content = "Welcome! Ask me anything:").send()
+
 
 #Specific to each user session where multiple users interace w/the bot simultaneously
-    cl.user_session.set("chain", qa_chain) 
+
 
 # This is the tool that will be called by the LLM 
-@cl.step(type="tool")
-async def process_tool(message: cl.Message):
-    qa_chain = cl.user_session.get("chain")
-    cb = cl.AsyncLangchainCallbackHandler(stream_final_answer=True, answer_prefix_tokens=["FINAL", "ANSWER"])
-    cb.answer_reached = True
+#@cl.step(type="tool")
+async def process_tool(message: cl.Message, qa_chain):
+    #qa_chain = cl.user_session.get("chain")
+    #cb = cl.AsyncLangchainCallbackHandler(stream_final_answer=True, answer_prefix_tokens=["FINAL", "ANSWER"])
+    #cb.answer_reached = True
 
     #waiting to call the chain which includes the LLM and the retriever
     response = await qa_chain.ainvoke({"input": message.content}, config={"callbacks": [cb]})
@@ -35,9 +36,9 @@ async def process_tool(message: cl.Message):
 #This will display the final answer from the bot
 @cl.on_message
 async def main(message: cl.Message):
-    
-    tool_response = await process_tool(message)
+    qa_chain = cl.user_session.get("chain")
+    tool_response = await process_tool(message, qa_chain)
 
-    bot_response = await qa_bot_answer(message.content, cl.user_session.get("chain"), tool_response, topic_to_response)
+    bot_response = await qa_bot_answer(message.content, qa_chain, tool_response, topic_to_response)
 
-    await cl.Message(content=bot_response["result"]).send()
+    await cl.Message(content=bot_response).send()
