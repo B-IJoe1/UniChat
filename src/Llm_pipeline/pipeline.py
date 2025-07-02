@@ -2,7 +2,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
-from Topic_Router import classify_topic_and_get_response
+from Topic_router import classify_topic_and_get_response
 from Data_pipeline.index import DB_FAISS_PATH
 from langchain_huggingface import HuggingFaceEmbeddings
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -82,16 +82,13 @@ def create_qa_chain(load_llm, custom_prompt):
 
 print("QA bot initialized successfully with sentence transformer!")
 
-async def qa_bot_answer(user_input, qa_chain, retriever):
-    docs = retriever.get_relevant_documents(user_input)
-
+# Return a callable function for Chainlit to use
+async def qa_bot_answer(user_input, qa_chain):
+    docs = qa_chain.get_relevant_documents(user_input)
     if docs:
         context = "\n".join([doc.page_content for doc in docs])
-        bot_response = await qa_chain.acall({"context": context, "input": user_input})
     else:
-        # Fallback response when no documents are found
-        bot_response = {
-            "output": "I'm sorry, I couldn't find any relevant information to answer your question."
-        }
-
+        context = classify_topic_and_get_response(user_input)
+    
+    bot_response = await qa_chain.acall({"context": context, "input": user_input})
     return bot_response
