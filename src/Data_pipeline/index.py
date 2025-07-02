@@ -9,8 +9,8 @@ from langchain_huggingface import HuggingFaceEmbeddings
 #DATA_PATH = 'demodataPDFs/'
 DB_FAISS_PATH = 'vectorstore/db_faiss'
 
-#Load the dataset
-df = pd.read_csv("Data_csv/Combined Admissions Data.csv")
+#Load the dataset 
+df = pd.read_csv("src/Data_csv/Combined Admissions Data.csv")
 docs = df['Content'].tolist()
 section_headers = df['Section Header'].tolist() #Loading the section headers
 
