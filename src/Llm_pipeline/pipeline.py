@@ -2,7 +2,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
-from Topic_router import classify_topic_and_get_response
+from Topic_Router import classify_topic_and_get_response
 from Data_pipeline.index import DB_FAISS_PATH
 from langchain_huggingface import HuggingFaceEmbeddings
 from transformers import AutoModelForCausalLM, AutoTokenizer

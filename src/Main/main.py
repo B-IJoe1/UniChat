@@ -5,7 +5,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from Llm_pipeline.pipeline import create_qa_chain, qa_bot_answer, load_llm, custom_prompt
-from Topic_router.topic_router import topic_to_response
+from Topic_Router.topic_router import topic_to_response
 
 
 #Automatically start the chat when the app is launched
