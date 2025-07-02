@@ -5,7 +5,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from Llm_pipeline.pipeline import create_qa_chain, qa_bot_answer, load_llm, custom_prompt
-from Topic_Router.topic_router import topic_to_response
+#from Topic_Router.topic_router import topic_to_response
 
 
 #Automatically start the chat when the app is launched
@@ -39,6 +39,6 @@ async def main(message: cl.Message):
     qa_chain = cl.user_session.get("chain")
     tool_response = await process_tool(message, qa_chain)
 
-    bot_response = await qa_bot_answer(message.content, qa_chain, tool_response, topic_to_response)
+    bot_response = await qa_bot_answer(message.content, qa_chain, tool_response)
 
     await cl.Message(content=bot_response).send()
