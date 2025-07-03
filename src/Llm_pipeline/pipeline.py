@@ -83,7 +83,7 @@ def create_qa_chain(load_llm, custom_prompt):
 print("QA bot initialized successfully with sentence transformer!")
 
 # Return a callable function for Chainlit to use
-async def qa_bot_answer(user_input, qa_chain):
+async def qa_bot_answer(user_input: str, qa_chain) -> str:
     docs = qa_chain.get_relevant_documents(user_input)
     if docs:
         context = "\n".join([doc.page_content for doc in docs])
