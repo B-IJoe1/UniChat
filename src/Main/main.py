@@ -1,31 +1,28 @@
+from typing import cast
 import chainlit as cl
-import sys
-import os
+from langchain.schema import Runnable
+from langchain.schema.runnable.config import RunnableConfig
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from Llm_pipeline.pipeline import create_qa_chain, qa_bot_answer, load_llm, custom_prompt 
-from Topic_Router.topic_router import topic_to_response
-  # Import the topic_to_response mapping
+from Llm_pipeline.pipeline import create_qa_chain, load_llm, custom_prompt
+#from Topic_Router.topic_router import topic_to_response
 
 @cl.on_chat_start
-async def start():
+async def on_chat_start():
+    # Set up your QA chain as a Runnable
     qa_chain = create_qa_chain(load_llm=load_llm, custom_prompt=custom_prompt)
-    print("LLM Loader:", load_llm)
-    print("Prompt Template:", custom_prompt)
-    cl.user_session.set("chain", qa_chain)
-    await cl.Message(content="Welcome! Ask me anything:").send()
+    cl.user_session.set("runnable", qa_chain)
 
 @cl.on_message
-async def main(message: cl.Message):
-    qa_chain = cl.user_session.get("chain")
-    #cb = cl.AsyncLangchainCallbackHandler(stream_final_answer=True, answer_prefix_tokens=["FINAL", "ANSWER"]) # Remove callback handler
-    #cb.answer_reached = True # Remove callback handler
+async def on_message(message: cl.Message):
+    runnable = cast(Runnable, cl.user_session.get("runnable"))  # type: Runnable
 
-    #waiting to call the chain which includes the LLM and the retriever
-    response = await qa_chain.ainvoke({"input": message.content}) # Remove config
+    msg = cl.Message(content="")
 
-    bot_response = await qa_bot_answer(message.content, response, topic_to_response) 
+    # Stream the answer as tokens/chunks
+    async for chunk in runnable.astream(
+        {"input": message.content},
+        config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
+    ):
+        await msg.stream_token(chunk)
 
-    await cl.Message(content=bot_response).send() # Send the final answer
-
+    await msg.send()
