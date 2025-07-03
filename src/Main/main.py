@@ -23,5 +23,9 @@ async def on_message(message: cl.Message):
         config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
     ):
         await msg.stream_token(chunk)
-
-    await msg.send()
+        
+    # If chunk is a Document, extract the text
+    if hasattr(chunk, "page_content"):
+        await msg.stream_token(chunk.page_content)
+    else:
+        await msg.stream_token(str(chunk))
