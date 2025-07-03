@@ -6,10 +6,10 @@ from Llm_pipeline.pipeline import create_qa_chain, load_llm, custom_prompt
 #from Topic_Router.topic_router import topic_to_response
 
 @cl.on_chat_start
-async def on_chat_start():
+async def on_chat_start(): 
     # Set up your QA chain as a Runnable
     qa_chain = create_qa_chain(load_llm=load_llm, custom_prompt=custom_prompt)
-    cl.user_session.set("runnable", qa_chain)
+    cl.user_session.set("runnable", qa_chain) #This is almsost like an image of the chain that can be used later
 
 @cl.on_message
 async def on_message(message: cl.Message):
@@ -22,10 +22,8 @@ async def on_message(message: cl.Message):
         {"input": message.content},
         config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
     ):
+        print("Chunk type:", type(chunk))
+        print("Chunk value:", chunk)
         await msg.stream_token(chunk)
-        
-    # If chunk is a Document, extract the text
-    if hasattr(chunk, "page_content"):
-        await msg.stream_token(chunk.page_content)
-    else:
-        await msg.stream_token(str(chunk))
+
+    await msg.send()
