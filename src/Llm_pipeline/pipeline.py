@@ -54,8 +54,8 @@ print(f"Custom prompt after PromptTemplate: {type(custom_prompt())}")
 def create_qa_chain(load_llm, custom_prompt):
    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
    db = FAISS.load_local(DB_FAISS_PATH, embeddings=embeddings, allow_dangerous_deserialization=True)
-   retriever = db.as_retriever(search_kwargs={"k": 3})
-   llm = load_llm()
+   retriever = db.as_retriever(search_kwargs={"k": 3}) 
+   llm = load_llm() 
    prompt = custom_prompt()
    
     #Validate types
@@ -77,7 +77,8 @@ def create_qa_chain(load_llm, custom_prompt):
    print(f"Question_answer_chain before StrOutputParser: {type(question_answer_chain)}")
    qa_chain = create_retrieval_chain(retriever,
                                       question_answer_chain,
-                                      ) | StrOutputParser() # This will serialize the output as a string
+                                      ) 
+   qa_chain = qa_chain | StrOutputParser() # This ensures the final output is a string
    print(f"QA chain after StrOutputParser: {type(qa_chain)}")
    return qa_chain
 
