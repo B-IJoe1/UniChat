@@ -1,8 +1,7 @@
 from typing import cast
 import chainlit as cl
-from langchain.schema import Runnable
-from langchain.schema.runnable.config import RunnableConfig
-
+from langchain_core.runnables.config import RunnableConfig
+from langchain_core.runnables import Runnable
 from Llm_pipeline.pipeline import create_qa_chain, load_llm, custom_prompt
 #from Topic_Router.topic_router import topic_to_response
 
