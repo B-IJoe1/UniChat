@@ -12,7 +12,7 @@ from langchain_huggingface import HuggingFacePipeline
 from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.runnables.base import Runnable
 from langchain.chains.combine_documents import create_stuff_documents_chain
-
+from langchain_core.output_parsers import StrOutputParser
 
 # LLM loader
 def load_llm():
@@ -76,7 +76,7 @@ def create_qa_chain(load_llm, custom_prompt):
    question_answer_chain = create_stuff_documents_chain(llm,prompt)
    qa_chain = create_retrieval_chain(retriever,
                                       question_answer_chain,
-                                      )
+                                      ) | StrOutputParser() # This will serialize the output as a string
                                      
    return qa_chain
 
