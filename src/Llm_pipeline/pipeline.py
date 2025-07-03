@@ -47,8 +47,7 @@ def custom_prompt():
         Question: {input}
         """
     return PromptTemplate(template=template, input_variables=["context", "input"])
-    
-
+print(f"Custom prompt after PromptTemplate: {type(custom_prompt())}")
 
 #os.environ["TOKENIZERS_PARALLELISM"] = "false" #disabling parallelism to avoid warnings
 # Main QA bot setup
@@ -74,10 +73,12 @@ def create_qa_chain(load_llm, custom_prompt):
    
 
    question_answer_chain = create_stuff_documents_chain(llm,prompt)
+   
+   print(f"Question_answer_chain before StrOutputParser: {type(question_answer_chain)}")
    qa_chain = create_retrieval_chain(retriever,
                                       question_answer_chain,
                                       ) | StrOutputParser() # This will serialize the output as a string
-                                     
+   print(f"QA chain after StrOutputParser: {type(qa_chain)}")
    return qa_chain
 
 print("QA bot initialized successfully with sentence transformer!")
@@ -85,4 +86,7 @@ print("QA bot initialized successfully with sentence transformer!")
 # Return a callable function for Chainlit to use
 async def qa_bot_answer(user_input: str, qa_chain) -> str:
     bot_response = await qa_chain.acall({"input": user_input})
+    print(f"bot_response type: {type(bot_response)}")
+    print(f"bot_response value: {bot_response}") 
     return bot_response #No need to StrOutputParser here, as the chain already returns the string
+

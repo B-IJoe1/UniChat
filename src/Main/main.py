@@ -17,13 +17,23 @@ async def on_message(message: cl.Message):
 
     msg = cl.Message(content="")
 
-    # Stream the answer as tokens/chunks
+
+    answer_prefix_tokens = ["FINAL", "ANSWER"]
+
+   # Stream the answer as tokens/chunks
     async for chunk in runnable.astream(
         {"input": message.content},
-        config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
+        config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler(stream_final_answer=True,
+                                                                     answer_prefix_tokens=answer_prefix_tokens)]),
     ):
-        print("Chunk type:", type(chunk))
-        print("Chunk value:", chunk)
-        await msg.stream_token(chunk)
+        # Check if the chunk is a string
+        if isinstance(chunk, str):
+            await msg.stream_token(chunk)
+        elif isinstance(chunk, dict) and "text" in chunk:
+            await msg.stream_token(chunk["text"])
+        else:
+            # Handle other cases or raise an error
+            print(f"Unexpected chunk type: {type(chunk)}, value: {chunk}")
+            await msg.stream_token(str(chunk))  # fallback to string conversion
 
     await msg.send()
