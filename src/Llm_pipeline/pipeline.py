@@ -73,7 +73,7 @@ def create_qa_chain(load_llm, custom_prompt):
 
    question_answer_chain = create_stuff_documents_chain(llm,prompt)
    qa_chain = create_retrieval_chain(retriever,
-                                      question_answer_chain) | StrOutputParser
+                                      question_answer_chain) | StrOutputParser()
    
    #qa_chain = qa_chain | StrOutputParser()  # Ensure the final output is a string                                 
    return qa_chain
