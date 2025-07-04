@@ -10,7 +10,7 @@ from langchain.chains import create_retrieval_chain
 from langchain.memory import ConversationBufferMemory
 from langchain_huggingface import HuggingFacePipeline
 from langchain_core.prompts.base import BasePromptTemplate
-from langchain_core.runnables.base import Runnable, RunnableMap
+from langchain_core.runnables.base import Runnable
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.output_parsers import StrOutputParser
 
@@ -51,40 +51,44 @@ print(f"Custom prompt after PromptTemplate: {type(custom_prompt())}")
 
 #os.environ["TOKENIZERS_PARALLELISM"] = "false" #disabling parallelism to avoid warnings
 # Main QA bot setup
+
+def load_retriever():
+    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    db = FAISS.load_local(DB_FAISS_PATH, embeddings=embeddings, allow_dangerous_deserialization=True)
+    retriever = db.as_retriever(search_kwargs={"k": 3}) 
+    print("Retriever loaded successfully.")
+    return retriever
+
+
 def create_qa_chain(load_llm, custom_prompt):
-   embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-   db = FAISS.load_local(DB_FAISS_PATH, embeddings=embeddings, allow_dangerous_deserialization=True)
-   retriever = db.as_retriever(search_kwargs={"k": 3}) 
    llm = load_llm() 
    prompt = custom_prompt()
-   
-    #Validate types
-   #if not isinstance(llm, Runnable):
-    #raise TypeError(f"Expected 'llm' to be a Runnable, got {type(llm)}")
-   #if not isinstance(prompt, BasePromptTemplate):
-      #raise TypeError(f"Expected 'prompt' to be a BasePromptTemplate, got {type(prompt)}")
-   
+   qa_chain = create_stuff_documents_chain(llm,prompt) | StrOutputParser()
 
-   #memory = ConversationBufferMemory(return_messages=True,
-                                    #memory_key="chat_history", 
-                                    #input_key="input", 
-                                    #output_key="answer")
                                     
-   question_answer_chain = create_stuff_documents_chain(llm,prompt)
+   
    # Create a document QA chain
    #print(f"Question_answer_chain before StrOutputParser: {type(question_answer_chain)}")
    #qa_chain = create_retrieval_chain(retriever,question_answer_chain) 
 
-   qa_chain = question_answer_chain | retriever | StrOutputParser()
    print("QA chain created successfully.")
    
    return qa_chain
+
 print("QA bot initialized successfully with sentence transformer!")
 
 # Return a callable function for Chainlit to use
 async def qa_bot_answer(user_input: str, qa_chain: Runnable) -> str:
-    bot_response = await qa_chain.ainvoke({"input":user_input})
-    print(f"bot_response type: {type(bot_response)}")
-    print(f"bot_response value: {bot_response}") 
+    retriever = load_retriever()
+    docs = retriever.get_relevant_documents(user_input)
+
+    if docs:
+        context = "\n".join([doc.page_content for doc in docs])
+    else:
+        context = "No relevant documents found."
+
+    bot_response = await qa_chain.ainvoke({"context":context, "input": user_input})
+    
+    print(f"bot_response: {bot_response}")
     return bot_response #No need to StrOutputParser here, as the chain already returns the string
 
