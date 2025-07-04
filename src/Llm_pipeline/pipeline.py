@@ -78,7 +78,8 @@ def create_qa_chain(load_llm, custom_prompt):
 print("QA bot initialized successfully with sentence transformer!")
 
 # Return a callable function for Chainlit to use
-async def qa_bot_answer(user_input: str, qa_chain: Runnable) -> str:
+async def qa_bot_answer(user_input, qa_chain):
+
     retriever = load_retriever()
     docs = retriever.get_relevant_documents(user_input)
 
@@ -87,8 +88,8 @@ async def qa_bot_answer(user_input: str, qa_chain: Runnable) -> str:
     else:
         context = "No relevant documents found."
 
-    bot_response = await qa_chain.ainvoke({"context":context, "input": user_input})
-    
+    bot_response = await qa_chain.invoke({"context":context, "input": user_input})
+
     print(f"bot_response: {bot_response}")
     return bot_response #No need to StrOutputParser here, as the chain already returns the string
 
