@@ -85,8 +85,8 @@ def create_qa_chain(load_llm, custom_prompt):
 print("QA bot initialized successfully with sentence transformer!")
 
 # Return a callable function for Chainlit to use
-async def qa_bot_answer(user_input: str, qa_chain) -> str:
-    bot_response = await qa_chain.acall({"input": user_input})
+async def qa_bot_answer(user_input: str, qa_chain: Runnable) -> str:
+    bot_response = await qa_chain.acall({user_input})
     print(f"bot_response type: {type(bot_response)}")
     print(f"bot_response value: {bot_response}") 
     return bot_response #No need to StrOutputParser here, as the chain already returns the string
