@@ -2,7 +2,7 @@ import chainlit as cl
 from Llm_pipeline.pipeline import create_qa_chain, qa_bot_answer, load_llm, custom_prompt
 
 # Create the chain globally
-qa_chain, retriever = create_qa_chain(load_llm=load_llm, custom_prompt=custom_prompt)
+qa_chain = create_qa_chain(load_llm=load_llm, custom_prompt=custom_prompt)
 
 @cl.on_chat_start
 async def start():
