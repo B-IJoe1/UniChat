@@ -1,36 +1,17 @@
-from typing import cast
 import chainlit as cl
-from langchain_core.runnables.config import RunnableConfig
-from langchain_core.runnables import Runnable
-from Llm_pipeline.pipeline import create_qa_chain, load_llm, custom_prompt
-#from Topic_Router.topic_router import topic_to_response
+from Llm_pipeline.pipeline import create_qa_chain, qa_bot_answer, load_llm, custom_prompt
+
+# Create the chain globally
+qa_chain = create_qa_chain(load_llm=load_llm, custom_prompt=custom_prompt)
 
 @cl.on_chat_start
-async def on_chat_start(): 
-    # Set up your QA chain as a Runnable
-    qa_chain = create_qa_chain(load_llm=load_llm, custom_prompt=custom_prompt)
-    cl.user_session.set("runnable", qa_chain) #This is almsost like an image of the chain that can be used later
+async def start():
+    await cl.Message(content="Hi! I’m your Salem State Admissions Assistant. How can I help?").send()
 
 @cl.on_message
 async def on_message(message: cl.Message):
-    runnable = cast(Runnable, cl.user_session.get("runnable"))  # type: Runnable
+    # Call the QA chain using the user's input
+    response = await qa_bot_answer(user_input=message.content, qa_chain=qa_chain)
 
-    msg = cl.Message(content="")
-    await msg.send()  # Send it initially
-
-   # Stream the answer as tokens/chunks
-    async for chunk in runnable.astream(
-        {"input": message.content},
-        config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
-    ):
-        # Check if the chunk is a string
-        if isinstance(chunk, str):
-            await msg.stream_token(chunk)
-        elif isinstance(chunk, dict) and "text" in chunk:
-            await msg.stream_token(chunk["text"])
-        else:
-            # Handle other cases or raise an error
-            print(f"Unexpected chunk type: {type(chunk)}, value: {chunk}")
-            await msg.stream_token(str(chunk))  # fallback to string conversion
-
-    await msg.update()
+    # Send the response back to the user
+    await cl.Message(content=response).send()

@@ -64,36 +64,26 @@ def create_qa_chain(load_llm, custom_prompt):
    #if not isinstance(prompt, BasePromptTemplate):
       #raise TypeError(f"Expected 'prompt' to be a BasePromptTemplate, got {type(prompt)}")
    
-   
 
    #memory = ConversationBufferMemory(return_messages=True,
                                     #memory_key="chat_history", 
                                     #input_key="input", 
                                     #output_key="answer")
-   
-
+                                    
    question_answer_chain = create_stuff_documents_chain(llm,prompt)
    # Create a document QA chain
    #print(f"Question_answer_chain before StrOutputParser: {type(question_answer_chain)}")
    #qa_chain = create_retrieval_chain(retriever,question_answer_chain) 
 
-   qa_chain = (
-        RunnableMap({
-            "input": lambda x: x["input"] if isinstance(x, dict) else x,
-            "context": lambda x: retriever.invoke(x) if isinstance(x, dict) else x
-        }) 
-        | question_answer_chain
-        | StrOutputParser()
-   )
+   qa_chain = question_answer_chain | retriever | StrOutputParser()
    print("QA chain created successfully.")
-
+   
    return qa_chain
-
 print("QA bot initialized successfully with sentence transformer!")
 
 # Return a callable function for Chainlit to use
 async def qa_bot_answer(user_input: str, qa_chain: Runnable) -> str:
-    bot_response = await qa_chain.acall({user_input})
+    bot_response = await qa_chain.acall({"input":user_input})
     print(f"bot_response type: {type(bot_response)}")
     print(f"bot_response value: {bot_response}") 
     return bot_response #No need to StrOutputParser here, as the chain already returns the string
