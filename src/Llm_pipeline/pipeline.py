@@ -65,7 +65,7 @@ def create_qa_chain(load_llm, custom_prompt):
    llm = load_llm() 
    prompt = custom_prompt()
    qa_chain = create_stuff_documents_chain(llm,prompt) | StrOutputParser()
-
+   retriever = load_retriever()
                                     
    
    # Create a document QA chain
@@ -74,15 +74,14 @@ def create_qa_chain(load_llm, custom_prompt):
 
    print("QA chain created successfully.")
    
-   return qa_chain
+   return qa_chain, retriever
 
 print("QA bot initialized successfully with sentence transformer!")
 
 # Return a callable function for Chainlit to use
-async def qa_bot_answer(user_input, qa_chain):
+async def qa_bot_answer(user_input, qa_chain, retriever):
 
-    retriever = load_retriever()
-    docs = retriever.ainvoke(user_input)
+    docs = await retriever.ainvoke(user_input) #ainvoke is used for asynchronous retrieval
 
     if docs:
         context = "\n".join([doc.page_content for doc in docs])
