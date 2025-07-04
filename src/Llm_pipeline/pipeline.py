@@ -10,7 +10,7 @@ from langchain.chains import create_retrieval_chain
 from langchain.memory import ConversationBufferMemory
 from langchain_huggingface import HuggingFacePipeline
 from langchain_core.prompts.base import BasePromptTemplate
-from langchain_core.runnables.base import Runnable
+from langchain_core.runnables.base import Runnable, RunnableMap
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.output_parsers import StrOutputParser
 
@@ -73,20 +73,27 @@ def create_qa_chain(load_llm, custom_prompt):
    
 
    question_answer_chain = create_stuff_documents_chain(llm,prompt)
+   # Create a document QA chain
+   #print(f"Question_answer_chain before StrOutputParser: {type(question_answer_chain)}")
+   #qa_chain = create_retrieval_chain(retriever,question_answer_chain) 
+
+   qa_chain = (
+        RunnableMap({
+            "input": lambda x: x,
+            "context": lambda x: retriever.invoke(x)
+        }) 
+        | question_answer_chain
+        | StrOutputParser()
+    )
+   print("QA chain created successfully.")
    
-   print(f"Question_answer_chain before StrOutputParser: {type(question_answer_chain)}")
-   qa_chain = create_retrieval_chain(retriever,
-                                      question_answer_chain,
-                                      ) 
-   qa_chain = qa_chain | StrOutputParser() # This ensures the final output is a string
-   print(f"QA chain after StrOutputParser: {type(qa_chain)}")
    return qa_chain
 
 print("QA bot initialized successfully with sentence transformer!")
 
 # Return a callable function for Chainlit to use
 async def qa_bot_answer(user_input: str, qa_chain: Runnable) -> str:
-    bot_response = await qa_chain.acall({user_input})
+    bot_response = await qa_chain.acall({"input": user_input})
     print(f"bot_response type: {type(bot_response)}")
     print(f"bot_response value: {bot_response}") 
     return bot_response #No need to StrOutputParser here, as the chain already returns the string

@@ -16,15 +16,12 @@ async def on_message(message: cl.Message):
     runnable = cast(Runnable, cl.user_session.get("runnable"))  # type: Runnable
 
     msg = cl.Message(content="")
-
-
-    answer_prefix_tokens = ["FINAL", "ANSWER"]
+    await msg.send()  # Send it initially
 
    # Stream the answer as tokens/chunks
     async for chunk in runnable.astream(
         {"input": message.content},
-        config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler(stream_final_answer=True,
-                                                                     answer_prefix_tokens=answer_prefix_tokens)]),
+        config=RunnableConfig(callbacks=[cl.LangchainCallbackHandler()]),
     ):
         # Check if the chunk is a string
         if isinstance(chunk, str):
@@ -36,4 +33,4 @@ async def on_message(message: cl.Message):
             print(f"Unexpected chunk type: {type(chunk)}, value: {chunk}")
             await msg.stream_token(str(chunk))  # fallback to string conversion
 
-    await msg.send()
+    await msg.update()
