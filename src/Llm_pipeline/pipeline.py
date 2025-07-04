@@ -74,7 +74,7 @@ def create_qa_chain(load_llm, custom_prompt):
 
    question_answer_chain = create_stuff_documents_chain(llm,prompt)
    qa_chain = create_retrieval_chain(retriever,
-                                      question_answer_chain)
+                                      question_answer_chain) | StrOutputParser()  # Ensure the final output is a string
    
    #qa_chain = qa_chain | StrOutputParser()  # Ensure the final output is a string                                 
    return qa_chain
@@ -84,12 +84,6 @@ print("QA bot initialized successfully with sentence transformer!")
 
 # Return a callable function for Chainlit to use
 async def qa_bot_answer(user_input, qa_chain):
-    docs = qa_chain.get_relevant_documents(user_input)
-    if docs:
-        context = "\n".join([doc.page_content for doc in docs])
-    else:
-        context = classify_topic_and_get_response(user_input)
-    
-    bot_response = await qa_chain.acall({"context": context, "input": user_input})
+    bot_response = await qa_chain.acall({"input": user_input})
     return bot_response #to StrOutputParser here, as the chain already returns the string
 
