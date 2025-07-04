@@ -44,6 +44,7 @@ def load_llm():
 def custom_prompt():
     template = """You are a helpful chat assistant for Salem State University admissions.
         Context: {context}
+
         Question: {input}
         """
     return PromptTemplate(template=template, input_variables=["context", "input"])
@@ -81,7 +82,7 @@ print("QA bot initialized successfully with sentence transformer!")
 async def qa_bot_answer(user_input, qa_chain):
 
     retriever = load_retriever()
-    docs = retriever.get_relevant_documents(user_input)
+    docs = retriever.ainvoke(user_input)
 
     if docs:
         context = "\n".join([doc.page_content for doc in docs])
