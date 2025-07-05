@@ -10,7 +10,7 @@ from langchain.chains import create_retrieval_chain
 from langchain.memory import ConversationBufferMemory
 from langchain_huggingface import HuggingFacePipeline
 from langchain_core.prompts.base import BasePromptTemplate
-from langchain_core.runnables.base import Runnable
+from langchain_core.runnables.base import RunnableMap, RunnablePassthrough
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.output_parsers import StrOutputParser
 
@@ -71,12 +71,14 @@ def create_qa_chain(load_llm, custom_prompt):
    #print(f"Question_answer_chain before StrOutputParser: {type(question_answer_chain)}")
 
     #create_retrieval_chain expects a retriever and a chain that takes a question and context
-   #question_answer_chain = create_stuff_documents_chain(llm,prompt) #This chain will take a question and context, and return an answer
+   question_answer_chain = create_stuff_documents_chain(llm,prompt) #This chain will take a question and context, and return an answer
    #qa_chain = create_retrieval_chain(retriever,
                                       #question_answer_chain) 
-
    
-   qa_chain = prompt | retriever | llm | StrOutputParser() #This will create a chain that takes a question, retrieves context, and returns an answer
+   qa_chain = RunnableMap({
+        "context": retriever,
+        "input": RunnablePassthrough()
+    }) | question_answer_chain | StrOutputParser() #This will create a chain that takes a question, retrieves context, and returns an answer
 
    #Many ask what will qa_chain return? It will return a dictionary with the answer and the context used to generate it.
    #qa_chain = qa_chain.with_output_keys(["answer"])  # Ensure the output is a string
@@ -87,12 +89,12 @@ print("QA bot initialized successfully with sentence transformer!")
 
 # Return a callable function for Chainlit to use
 async def qa_bot_answer(user_input, qa_chain):
-    retriever = load_retriever()
-    docs = await retriever.ainvoke(user_input)
-    context = "\n".join([doc.page_content for doc in docs])
+    #retriever = load_retriever()
+    #docs = await retriever.ainvoke(user_input)
+    #context = "\n".join([doc.page_content for doc in docs])
 
-    bot_response = await qa_chain.ainvoke({"input": user_input, 
-                                           "context": context})
+    bot_response = await qa_chain.ainvoke(user_input)
+
     print(bot_response)
-    return bot_response["answer"] #to StrOutputParser here, as the chain already returns the string
+    return bot_response #to StrOutputParser here, as the chain already returns the string
 
