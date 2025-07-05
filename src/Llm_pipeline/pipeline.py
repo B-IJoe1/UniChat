@@ -42,15 +42,15 @@ def load_llm():
 
 # Prompt template
 def custom_prompt():
-    template = """You are a helpful chat assistant for Salem State University admissions.
-        Only use the context below to answer the question. Do not repeat the context or the question in your response!
+    template = """You are a helpful and concise assistant for Salem State University admissions.
 
-        Context: {context}
+Use the context below to answer the question. Do not repeat the question or the context. Return only the final answer in plain text.
 
-        Question: {input}
+{context}
 
-        Response (plain text only):
-        """
+Q: {input}
+
+A:"""
     return PromptTemplate(template=template, input_variables=["context", "input"])
 print(f"Custom prompt after PromptTemplate: {type(custom_prompt())}")
 
