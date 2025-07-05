@@ -43,9 +43,13 @@ def load_llm():
 # Prompt template
 def custom_prompt():
     template = """You are a helpful chat assistant for Salem State University admissions.
+        Only use the context below to answer the question. Do not repeat the context or the question in your response!
+
         Context: {context}
 
         Question: {input}
+
+        Response (plain text only):
         """
     return PromptTemplate(template=template, input_variables=["context", "input"])
 print(f"Custom prompt after PromptTemplate: {type(custom_prompt())}")
@@ -56,7 +60,7 @@ print(f"Custom prompt after PromptTemplate: {type(custom_prompt())}")
 def load_retriever():
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     db = FAISS.load_local(DB_FAISS_PATH, embeddings=embeddings, allow_dangerous_deserialization=True)
-    retriever = db.as_retriever(search_kwargs={"k": 3}) 
+    retriever = db.as_retriever(search_kwargs={"k": 1}) 
     print("Retriever loaded successfully.")
     return retriever
 
