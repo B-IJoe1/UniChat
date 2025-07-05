@@ -73,14 +73,14 @@ def create_qa_chain(load_llm, custom_prompt):
     #create_retrieval_chain expects a retriever and a chain that takes a question and context
    question_answer_chain = create_stuff_documents_chain(llm,prompt) #This chain will take a question and context, and return an answer
    #qa_chain = create_retrieval_chain(retriever,
-                                      #question_answer_chain) 
+                                      #question_answer_chain) #This retrieval chain will return a dictionary with the answer and the context used to generate it.
+
    
    qa_chain = RunnableMap({
         "context": retriever,
-        "input": RunnablePassthrough()
+        "input": RunnablePassthrough() #You don't have user_input yet, so we use RunnablePassthrough() to pass the input directly for now
     }) | question_answer_chain | StrOutputParser() #This will create a chain that takes a question, retrieves context, and returns an answer
 
-   #Many ask what will qa_chain return? It will return a dictionary with the answer and the context used to generate it.
    #qa_chain = qa_chain.with_output_keys(["answer"])  # Ensure the output is a string
    return qa_chain
 
