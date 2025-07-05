@@ -71,10 +71,13 @@ def create_qa_chain(load_llm, custom_prompt):
    #print(f"Question_answer_chain before StrOutputParser: {type(question_answer_chain)}")
 
     #create_retrieval_chain expects a retriever and a chain that takes a question and context
-   question_answer_chain = create_stuff_documents_chain(llm,prompt) #This chain will take a question and context, and return an answer
-   qa_chain = create_retrieval_chain(retriever,
-                                      question_answer_chain) 
+   #question_answer_chain = create_stuff_documents_chain(llm,prompt) #This chain will take a question and context, and return an answer
+   #qa_chain = create_retrieval_chain(retriever,
+                                      #question_answer_chain) 
+
    
+   qa_chain = prompt | retriever | llm | StrOutputParser() #This will create a chain that takes a question, retrieves context, and returns an answer
+
    #Many ask what will qa_chain return? It will return a dictionary with the answer and the context used to generate it.
    #qa_chain = qa_chain.with_output_keys(["answer"])  # Ensure the output is a string
    return qa_chain
