@@ -43,14 +43,12 @@ def load_llm():
 # Prompt template
 def custom_prompt():
     template = """You are a helpful and concise assistant for Salem State University admissions.
-
-Use the context below to answer the question. Do not repeat the question or the context. Return only the final answer in plain text.
-
-{context}
-
-Q: {input}
-
-A:"""
+    Answer the question based only on the following context:
+    
+    {context}
+    
+    Input: {input}
+    """
     return PromptTemplate(template=template, input_variables=["context", "input"])
 print(f"Custom prompt after PromptTemplate: {type(custom_prompt())}")
 
@@ -97,7 +95,7 @@ async def qa_bot_answer(user_input, qa_chain):
     #docs = await retriever.ainvoke(user_input)
     #context = "\n".join([doc.page_content for doc in docs])
 
-    bot_response = await qa_chain.ainvoke(user_input)
+    bot_response = await [chunk for chunk in qa_chain.astream(user_input)]
 
     print(bot_response)
     return bot_response #to StrOutputParser here, as the chain already returns the string
