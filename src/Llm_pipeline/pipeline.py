@@ -93,11 +93,12 @@ print("QA bot initialized successfully with sentence transformer!")
 
 # Return a callable function for Chainlit to use
 async def qa_bot_answer(user_input, qa_chain):
-    #retriever = load_retriever()
-    #docs = await retriever.ainvoke(user_input)
-    #context = "\n".join([doc.page_content for doc in docs])
+    bot_response_chunks = []
+    
+    async for chunk in qa_chain.astream(user_input):
+        bot_response_chunks.append(chunk)
 
-    bot_response = [chunk for chunk in qa_chain.astream(user_input)]
+    bot_response = "".join(bot_response_chunks)
 
     print(bot_response)
     return bot_response #to StrOutputParser here, as the chain already returns the string
