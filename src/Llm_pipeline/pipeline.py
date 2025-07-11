@@ -97,7 +97,7 @@ async def qa_bot_answer(user_input, qa_chain):
     #docs = await retriever.ainvoke(user_input)
     #context = "\n".join([doc.page_content for doc in docs])
 
-    bot_response = await [chunk for chunk in qa_chain.astream(user_input)]
+    bot_response = [chunk for chunk in qa_chain.astream(user_input)]
 
     print(bot_response)
     return bot_response #to StrOutputParser here, as the chain already returns the string
