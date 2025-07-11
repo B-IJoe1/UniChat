@@ -22,6 +22,7 @@ def load_llm():
         torch_dtype="auto",  # bfloat16 on supported hardware, fallback otherwise
         device_map="auto",
         low_cpu_mem_usage=True,
+        
     )
     tokenizer = AutoTokenizer.from_pretrained(model_id)
     print("Transformers model loaded successfully.")
@@ -37,6 +38,7 @@ def load_llm():
         temperature=0.5,
         top_p=0.1,
         top_k=1,
+        return_full_text=False,
     )
     return HuggingFacePipeline(pipeline=pipe)
 
