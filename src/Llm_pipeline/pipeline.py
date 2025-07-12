@@ -38,7 +38,7 @@ def load_llm():
         temperature=0.5,
         top_p=0.1,
         top_k=1,
-        return_full_text=False,
+        return_full_text=False, #This is important to not return the context and the prompt together
     )
     return HuggingFacePipeline(pipeline=pipe)
 
