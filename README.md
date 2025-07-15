@@ -1,4 +1,4 @@
-# 🧠 UniChat: Topic-Aware University Q&A Chatbot
+# 🧠 UniChat: University Q&A Chatbot
 
 UniChat is an AI-powered chatbot designed to answer university-related questions with precision, context, and relevance. It uses topic modeling and vector search to retrieve the best answer from your knowledge base and presents it via a real-time interactive UI.
 
@@ -9,16 +9,6 @@ Built with:
 - 🧠 **BERTopic** for topic clustering & chunking
 - 🔍 **FAISS** for fast vector similarity search
 - ⚡ **Accelerate** for GPU support on RunPod
-
----
-
-## 🚀 Features
-
-- Conversational interface powered by **Chainlit**
-- Topic-aware chunking with **BERTopic**
-- Smart document retrieval with **FAISS**
-- Hugging Face-hosted fine-tuned LLM support
-- Built for student help desks and university websites
 
 ---
 
@@ -44,10 +34,6 @@ pip install faiss-cpu
 pip install accelerate  # Only required if running on RunPod or other GPU-based infra
 ```
 
-3. Or you can use this easy install methos (Might take longer to run)
-
-   ```bash
-   pip install requirements.txt
 
 
 
