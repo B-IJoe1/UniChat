@@ -1,27 +1,27 @@
-# 🧠 UniChat: University Q&A Chatbot
+# UniChat: University Q&A Chatbot
 
 UniChat is an AI-powered chatbot designed to answer university-related questions with precision, context, and relevance. It uses topic modeling and vector search to retrieve the best answer from your knowledge base and presents it via a real-time interactive UI.
 
 Built with:
-- 🧩 **LangChain** (core + Hugging Face + community tools)
-- 🔗 **Chainlit** for the frontend
-- 🤗 **Hugging Face Transformers** for LLMs
-- 🧠 **BERTopic** for topic clustering & chunking
-- 🔍 **FAISS** for fast vector similarity search
-- ⚡ **Accelerate** for GPU support on RunPod
+- **LangChain** (core + Hugging Face + community tools)
+- **Chainlit** for the frontend
+- **Hugging Face Transformers** for LLMs
+- **BERTopic** for topic clustering & chunking
+- **FAISS** for fast vector similarity search
+- **Accelerate** for GPU support on RunPod
 
 ---
-## 🗂️ Documentation & Media
+## 🗂Documentation & Media
 
-📓 **Step-by-step walkthrough** with visuals is available in:  
-👉 [`UniChat Project Journal.pdf`](./UniChat%20Project%20Journal.pdf)
+**Step-by-step walkthrough** with visuals is available in:  
+[`UniChat Project Journal.pdf`](./UniChat%20Project%20Journal.pdf)
 
-🎬 **Demo Video** (recommended to watch at 1.5x speed):  
-👉 [`UniChat Movie Project demonstration.mp4`](./UniChat%20Movie%20Project%20demonstration.mp4)
+**Demo Video** (recommended to watch at 1.5x speed):  
+[`UniChat Movie Project demonstration.mp4`](./UniChat%20Movie%20Project%20demonstration.mp4)
 
 --- 
 
-## 🛠 Installation
+## Installation
 
 Before running UniChat:
 
