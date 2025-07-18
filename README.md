@@ -11,7 +11,7 @@ Built with:
 - **Accelerate** for GPU support on RunPod
 
 ---
-## 🗂Documentation & Media
+## Documentation & Media
 
 **Step-by-step walkthrough** with visuals is available in:  
 [`UniChat Project Journal.pdf`](./UniChat%20Project%20Journal.pdf)
